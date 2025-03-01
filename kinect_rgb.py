@@ -22,7 +22,9 @@ def display_ir(dev, data, timestamp):
 
 def display_rgb(dev, data, timestamp):
     global keep_running
-    cv2.imshow('RGB', frame_convert2.video_cv(data))
+    #flip RGB image
+    image = cv2.rotate(frame_convert2.video_cv(data), cv2.ROTATE_180)
+    cv2.imshow('RGB', image)
     if cv2.waitKey(10) == 27:
         keep_running = False
 

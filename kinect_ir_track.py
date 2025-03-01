@@ -5,6 +5,8 @@ import cv2
 
 def get_video():
     array, _ = freenect.sync_get_video(0, freenect.VIDEO_IR_10BIT)
+    #rotate it 
+    array = cv2.rotate(array, cv2.ROTATE_180)
     return array
 
 def process_ir_image(frame):
