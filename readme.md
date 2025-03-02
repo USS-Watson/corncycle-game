@@ -38,7 +38,7 @@ Physical car locations needed to be converted in order to accurately represent t
 <img src="image/funkylinearalgebra.png" width="300">
 
 # The Ceiling Tile Projector
-Our mounting solution to get projection on our surface was very unique to say the least. A trip to Home Depot the night before the hackathon before provided us our own ceiling tiles for custom modification. We ended up utilizing lots of duct tape to get our projector and Kinect 9 feet high. The building's existing ceiling tile was taken away so we would not damage it. We did not damage anything we did not own and also ensured we returned the room to its state before our project.
+Our mounting solution to get projection on our surface was very unique to say the least. A trip to Home Depot the night before the hackathon before provided us our own ceiling tiles for custom modification. We ended up utilizing lots of duct tape to get our projector and Kinect 9 feet high. The building's existing ceiling tile was removed and placed elsewhere so we would not damage it. We did not damage anything we did not own and also ensured we returned the room to its state before our project.
 
 <img src="image/mounted.jpeg" width="300">
 
