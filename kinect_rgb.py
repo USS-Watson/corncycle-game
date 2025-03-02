@@ -24,6 +24,8 @@ def display_rgb(dev, data, timestamp):
     global keep_running
     #flip RGB image
     image = cv2.rotate(frame_convert2.video_cv(data), cv2.ROTATE_180)
+    #crop 
+    image = image[95:480, 0:640]
     cv2.imshow('RGB', image)
     if cv2.waitKey(10) == 27:
         keep_running = False
