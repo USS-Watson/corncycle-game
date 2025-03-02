@@ -43,7 +43,6 @@ def play_join(name: str):
     for line in join_lines:
         #replace placeholder {x}
         named_lines.append(line.replace("{x}", name))
-        print(line)
     
     line = random.choice(named_lines)
     play_audio(line)    
@@ -57,7 +56,6 @@ def play_win(name: str):
     for line in win_lines:
         #replace placeholder {x}
         named_lines.append(line.replace("{x}", name))
-        print(line)
     
     line = random.choice(named_lines)
     play_audio_async(line) #async to avoid blocking
@@ -71,7 +69,6 @@ def play_crash(name: str):
     for line in crash_lines:
         #replace placeholder {x}
         named_lines.append(line.replace("{x}", name))
-        print(line)
     line = random.choice(named_lines)
     play_audio_async(line) #async to avoid blocking
     
