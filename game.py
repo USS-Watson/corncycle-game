@@ -49,12 +49,12 @@ class Player:
     def update_position(self, new_position):
         """Update the player's position and reset last_seen counter."""
         # if len(self.trail) <= 0 or self.trail[-1] != self.position:
-        self.trail.append(self.position)  # Store the old position
+        self.trail.append(self.position)
         trails[self.position] = self
-        # if len(self.trail) > 50:  # Limit trail length to 10 points
-        #    self.trail.pop(0)  # Remove the oldest point in the trail
+        # if len(self.trail) > 50:
+        #    self.trail.pop(0)
         self.position = new_position
-        self.last_seen = 0  # Reset the missing frame counter
+        self.last_seen = 0
 
     def mark_missing(self):
         """Increase the last_seen counter if the player is not detected."""
@@ -67,32 +67,32 @@ class Player:
 
 def get_video():
     array, _ = freenect.sync_get_video(0, freenect.VIDEO_IR_10BIT)
-    array = cv2.rotate(array, cv2.ROTATE_180)  # Rotate if needed
+    array = cv2.rotate(array, cv2.ROTATE_180)
     
     #remove top of it a little bit because of the sun in the room.
     array = array[20:460, 0:640]    
     return array
 
 def process_ir_image(frame):
-    # Normalize and convert to 8-bit for OpenCV processing
+    # normalize, convert to 8-bit for OpenCV processing
     frame = np.clip(frame, 0, 2**10-1)
     frame = (frame / 4).astype(np.uint8)
 
-    # Apply Gaussian blur to smooth out noise
+    # gaussian blur to smooth out noise
     blurred = cv2.GaussianBlur(frame, (5, 5), 0)
 
-    # Apply thresholding to isolate bright IR light sources
+    # thresholding to isolate bright IR light sources
     _, thresh = cv2.threshold(frame, 200, 255, cv2.THRESH_BINARY)
 
     return thresh
 
 def detect_ir_lights(thresh):
-    # Find contours (bright spots)
+    # find contours (bright spots)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     light_positions = []
     for cnt in contours:
-        # Get the center of the contour
+        # get the center of the contour
         M = cv2.moments(cnt)
         if M["m00"] > 0:
             cx = int(M["m10"] / M["m00"])
@@ -154,16 +154,16 @@ def ask_if_player(position, prompt):
                 exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_y:
-                    return True  # User confirmed
+                    return True
                 elif event.key == pygame.K_n:
-                    return False  # User rejected
+                    return False
 
 def check_for_proximity(new_position):
     """Check if the new position is too close to an already assigned player."""
     for player in players:
         dist = np.linalg.norm(np.array(new_position) - np.array(player.position))
-        if dist < 50:  # You can adjust this threshold as needed
-            return True  # Too close to an already assigned player
+        if dist < 50:
+            return True
     return False
 
 def calibrate_players():
@@ -177,21 +177,21 @@ def calibrate_players():
         thresh = process_ir_image(frame)
         detected_lights = detect_ir_lights(thresh)
         
-        # Convert processed IR frame for Pygame
-        ir_display = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB)  # Convert grayscale to RGB
+        # convert processed IR frame for Pygame
+        ir_display = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB)
         cv2.imshow("IR", ir_display)
 
         for position in detected_lights:
             if len(players) >= NUM_PLAYERS:
-                break  # Stop asking if we have enough players
+                break
 
-            if not check_for_proximity(position):  # Only proceed if the point is not too close to an assigned player
+            if not check_for_proximity(position): # only proceed if the point is not too close to an assigned player
                 if ask_if_player(position, "Is this a player? (Y/N)"):
-                    # Assign the color based on the length of the players list
+                    # assign the color based on the length of the players list
                     player_color = colors[len(players)]
-                    # Create a new player object with position and color
+                    # create a new player object with position and color
                     new_player = Player(position, player_color)
-                    new_player.assign()  # Mark as assigned
+                    new_player.assign()  # mark as assigned
                     players.append(new_player)
                     print(f"Player {len(players)} assigned at {position} with color {player_color}")
 
@@ -213,7 +213,7 @@ def end_game():
         return
     
     font = pygame.font.Font(None, 72)
-    text = font.render("THIS PLAYER WINS!", True, player.color)
+    text = font.render(f"{player.color_string} PLAYER WINS!", True, player.color)
     text_rect = text.get_rect(center=(400, 300))
     running = True
     while running:
@@ -226,7 +226,7 @@ def end_game():
                 running = False
 
 # === MAIN GAME LOOP ===
-calibrate_players()  # Wait for player assignment before starting
+calibrate_players()  # wait for player assignment before starting
 screen.fill(WHITE)    
 
 running = True
@@ -243,9 +243,9 @@ while running:
         num_alive += 1
         if detected_lights:
             closest = min(detected_lights, key=lambda p: np.linalg.norm(np.array(p) - np.array(player.position)), default=None)
-            if closest and np.linalg.norm(np.array(closest) - np.array(player.position)) < 50:  # Allow some tolerance
+            if closest and np.linalg.norm(np.array(closest) - np.array(player.position)) < 50: # allow some tolerance
                 player.update_position(closest)
-                detected_lights.remove(closest)  # Remove from detection list to avoid duplicate assignment
+                detected_lights.remove(closest) # remove from detection list to avoid duplicate assignment
                 r, g, b, a = None, None, None, None
                 try:
                     r, g, b, a = screen.get_at(player.position)
@@ -253,37 +253,36 @@ while running:
                     print('skipping')
                     continue
                 position_color = (r, g, b)
-                print(f'loc: {player.position}, player color: {player.color}, position color: {position_color}')
+                print(f'loc: {player.position}, player color: {player.color_string}, position color: {position_color}')
                 if position_color != WHITE and position_color != BLACK and position_color != player.color:
                     kill_player(player)
                 # if player.position in trails and trails[player.position] != player and trails[player.position].alive:
             else:
-                player.mark_missing()  # Mark as missing if no close match found
+                player.mark_missing() # mark as missing if no close match found
         else:
-            player.mark_missing()  # Mark as missing if no detections at all
+            player.mark_missing() # mark as missing if no detections at all
     
     if num_alive <= 1:
         end_game()
         break
 
-    # Convert processed IR frame for Pygame
-    ir_display = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB)  # Convert grayscale to RGB
-    ir_display = np.rot90(ir_display)  # Rotate if needed
-    ir_display = pygame.surfarray.make_surface(ir_display)  # Convert to Pygame surface
+    # convert processed IR frame for Pygame
+    ir_display = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) # convert grayscale to RGB
+    ir_display = np.rot90(ir_display) # rotate if needed
+    ir_display = pygame.surfarray.make_surface(ir_display) # convert to Pygame surface
 
     screen.fill(WHITE)    
 
-    # Draw trails (lines connecting previous positions) for each player
+    # draw trails for each player
     for player in players:
         if not player.alive:
             continue
-        # Draw the player's trail
         for i in range(len(player.trail) - 10):
             pygame.draw.line(screen, player.color, player.trail[i], player.trail[i + 1], 5)
 
         x, y = player.position
-        # If the player is assigned, draw in the assigned color, else use green
-        color = player.color if player.assigned else (0, 255, 0)  # Use green if not assigned
+        # if the player is assigned, draw in the assigned color, else use green
+        color = player.color if player.assigned else (0, 255, 0)
         pygame.draw.circle(screen, color, (x, y), 10)
         text = FONT.render(f'({x}, {y})', True, color)
         screen.blit(text, (x, y))
