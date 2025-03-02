@@ -80,7 +80,7 @@ def run():
         array = cv2.rotate(array, cv2.ROTATE_180)
         
         #remove top of it a little bit because of the sun in the room.
-        array = array[20:460, 0:640]    
+        array = array[95:460, 0:640]    
         return array
 
     def process_ir_image(frame):
