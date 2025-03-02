@@ -5,7 +5,8 @@ import cv2
 
 pygame.init()
 
-WIDTH, HEIGHT = 640, 480
+WIDTH, HEIGHT = 800, 600
+
 
 # Set fullscreen mode with a fixed resolution of 640x480
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
@@ -76,6 +77,10 @@ def detect_ir_lights(thresh):
             cy = int(M["m01"] / M["m00"])
             light_positions.append((cx, cy))
     
+    return normalize(light_positions)
+
+def normalize(light_positions):
+    cx, cy = light_positions
     return light_positions
 
 def ask_if_player(position):

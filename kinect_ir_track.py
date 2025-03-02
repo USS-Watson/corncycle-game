@@ -34,7 +34,6 @@ def detect_ir_lights(thresh):
             cx = int(M["m10"] / M["m00"])
             cy = int(M["m01"] / M["m00"])
             light_positions.append((cx, cy))
-    
     return light_positions
 
 if __name__ == "__main__":
@@ -50,6 +49,7 @@ if __name__ == "__main__":
         output = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
         for (x, y) in lights:
             cv2.circle(output, (x, y), 5, (0, 0, 255), -1)
+            cv2.putText(output, f"({x}, {y})", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         cv2.imshow("IR with Tracked Points", output)
 
