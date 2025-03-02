@@ -7,9 +7,9 @@ import random
 import threading
 
 WIDTH, HEIGHT = 800, 600
-# QUAD = [(181, 100), (535, 100), (127, 351), (519, 371)]
-QUAD = [(188, 84), (533, 80), (144, 326), (528, 344)]
-NUM_PLAYERS = 3
+#QUAD = [(188, 84), (533, 80), (144, 326), (528, 344)]
+QUAD = [(143, 29), (493, 12), (115, 272), (496, 273)]
+NUM_PLAYERS = 2
 screen = None
 
 WHITE = (255, 255, 255)
@@ -80,7 +80,7 @@ def run():
         array = cv2.rotate(array, cv2.ROTATE_180)
         
         #remove top of it a little bit because of the sun in the room.
-        array = array[95:460, 0:640]    
+        array = array[65:460, 0:640]    
         return array
 
     def process_ir_image(frame):
@@ -373,8 +373,8 @@ def run():
                     print(f'loc: {player.position}, player color: {player.color_string}, position color: {position_color}')
                     if position_color != WHITE and position_color != BLACK and nearest_color(position_color) != player.color:
                         kill_player(player)
-                    if player.position[0] <= 5 or player.position[0] >= WIDTH-5 or player.position[1] <= 5 or player.position[1] >= HEIGHT-5:
-                        kill_player(player)
+                    # if player.position[0] <= 5 or player.position[0] >= WIDTH-5 or player.position[1] <= 5 or player.position[1] >= HEIGHT-5:
+                    #     kill_player(player)
                     # if player.position in trails and trails[player.position] != player and trails[player.position].alive:
                 else:
                     player.mark_missing() # mark as missing if no close match found
@@ -393,9 +393,10 @@ def run():
         #screen.fill(WHITE)    
         
         #tron image background
-        tron = pygame.image.load("tron.png")
-        tron = pygame.transform.scale(tron, (WIDTH, HEIGHT))
-        screen.blit(tron, (0, 0))
+        # tron = pygame.image.load("tron.png")
+        # tron = pygame.transform.scale(tron, (WIDTH, HEIGHT))
+        # screen.blit(tron, (0, 0))
+        screen.fill(WHITE)
 
         # draw trails for each player
         for player in players:
