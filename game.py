@@ -6,7 +6,9 @@ import cv2
 pygame.init()
 
 WIDTH, HEIGHT = 800, 600
+QUAD = [(181, 100), (535, 100), (127, 351), (519, 371)]
 
+FONT = pygame.font.Font(None, 36)
 
 # Set fullscreen mode with a fixed resolution of 640x480
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
@@ -77,11 +79,41 @@ def detect_ir_lights(thresh):
             cy = int(M["m01"] / M["m00"])
             light_positions.append((cx, cy))
     
-    return normalize(light_positions)
+    mapped_positions = normalize(light_positions)
+    # print(f'actual positions: {light_positions}, mapped positions: {mapped_positions}')
+    return mapped_positions
 
 def normalize(light_positions):
-    cx, cy = light_positions
-    return light_positions
+    dest = [(0, 0), (WIDTH, 0), (0, HEIGHT), (WIDTH, HEIGHT)]
+    H = funky_linear_algebra(QUAD, dest)
+    result = []
+    for position in light_positions:
+        cx, cy = position
+        point = np.array([cx, cy, 1])
+        mapped = H.dot(point)
+        mapped /= mapped[2]
+        x = int(round(mapped[0]))
+        y = int(round(mapped[1]))
+        if x >= WIDTH:
+            x = WIDTH-1
+        if y >= HEIGHT:
+            y = HEIGHT-1
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        result.append((x, y))
+    return result
+
+def funky_linear_algebra(src_pts, dst_pts):
+    A = []
+    for (x, y), (u, v) in zip(src_pts, dst_pts):
+        A.append([-x, -y, -1,   0,  0, 0, u*x, u*y, u])
+        A.append([ 0,  0,  0, -x, -y,-1, v*x, v*y, v])
+    A = np.array(A)
+    _, _, V = np.linalg.svd(A)
+    H = V[-1].reshape(3, 3)
+    return H
 
 def ask_if_player(position):
     """Asks user if the detected light is a player and waits for input."""
@@ -172,8 +204,7 @@ while running:
     ir_display = np.rot90(ir_display)  # Rotate if needed
     ir_display = pygame.surfarray.make_surface(ir_display)  # Convert to Pygame surface
 
-    #display a yellow background in pygame
-    screen.fill((255, 255, 0))    
+    screen.fill((255, 255, 255))    
 
     # Draw trails (lines connecting previous positions) for each player
     for player in players:
@@ -185,6 +216,8 @@ while running:
         # If the player is assigned, draw in the assigned color, else use green
         color = player.color if player.assigned else (0, 255, 0)  # Use green if not assigned
         pygame.draw.circle(screen, color, (x, y), 10)
+        text = FONT.render(f'({x}, {y})', True, color)
+        screen.blit(text, (x, y))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
