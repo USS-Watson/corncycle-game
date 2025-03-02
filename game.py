@@ -390,14 +390,19 @@ def run():
         ir_display = np.rot90(ir_display) # rotate if needed
         ir_display = pygame.surfarray.make_surface(ir_display) # convert to Pygame surface
 
-        screen.fill(WHITE)    
+        #screen.fill(WHITE)    
+        
+        #tron image background
+        tron = pygame.image.load("tron.png")
+        tron = pygame.transform.scale(tron, (WIDTH, HEIGHT))
+        screen.blit(tron, (0, 0))
 
         # draw trails for each player
         for player in players:
             if not player.alive:
                 continue
             for i in range(len(player.trail) - 10):
-                pygame.draw.line(screen, player.color, player.trail[i], player.trail[i + 1], 5)
+                pygame.draw.line(screen, player.color, player.trail[i], player.trail[i + 1], 10)
 
             x, y = player.position
             # if the player is assigned, draw in the assigned color, else use green
