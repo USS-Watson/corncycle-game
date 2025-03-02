@@ -2,6 +2,9 @@ import pygame
 import freenect
 import numpy as np
 import cv2
+import elevenlabs_voice
+import random
+import threading
 
 WIDTH, HEIGHT = 800, 600
 QUAD = [(181, 100), (535, 100), (127, 351), (519, 371)]
@@ -46,6 +49,7 @@ def run():
             self.trail = [] # list to store previous positions
             self.last_seen = 0 # frames since last detection
             self.alive = True
+            self.name = ""
 
         def update_position(self, new_position):
             """Update the player's position and reset last_seen counter."""
@@ -64,6 +68,10 @@ def run():
         def assign(self):
             """Mark the player as assigned."""
             self.assigned = True
+            
+        def set_name(self, name):
+            """Assign a name to the player."""
+            self.name = name
 
 
     def get_video():
@@ -195,11 +203,15 @@ def run():
                         new_player.assign()  # mark as assigned
                         players.append(new_player)
                         print(f"Player {len(players)} assigned at {position} with color {player_color}")
+                        name_player(new_player)
 
         print("Calibration complete!")
 
     def kill_player(player):
         player.alive = False
+        pygame.mixer.Sound.play(pygame.mixer.Sound("voice/crash.mp3"))
+        
+        elevenlabs_voice.play_crash(player.name)
         print(f'Player {player.color} died!')
 
     def end_game():
@@ -213,6 +225,9 @@ def run():
             print('something terrible has happened')
             return
         
+        pygame.mixer.music.stop()
+        elevenlabs_voice.play_win(player.name)
+
         font = pygame.font.Font(None, 72)
         text = font.render(f"{player.color_string} PLAYER WINS!", True, player.color)
         text_rect = text.get_rect(center=(400, 200))
@@ -229,12 +244,102 @@ def run():
                     if event.key == pygame.K_y:
                         running2 = False
 
+    def name_player(player):
+        """Prompts the user to name the player."""
+        waiting = True
+        text = ""  # Initialize the text variable outside the loop
+
+        while waiting:
+            screen.fill((0, 0, 0))
+
+            # Render the text input
+            text_surface = FONT.render(text, True, WHITE)
+            screen.blit(text_surface, (WIDTH // 4, HEIGHT // 2))
+
+            # Render the prompt
+            text_prompt = FONT.render("Enter name:", True, WHITE)
+            screen.blit(text_prompt, (WIDTH // 4, HEIGHT // 2 - 50))
+            
+            #render already assigned players
+            for p in players:
+                if p.name:
+                    text_player = FONT.render(f"{p.color_string}: {p.name}", True, p.color)
+                    screen.blit(text_player, (WIDTH // 4, HEIGHT // 2 - 100))
+                
+            
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        player.set_name(text)  # Use the set_name method to assign the name
+                        print(f'Player {player.color_string} named {player.name}')
+                        #save my poor elevenlabs tokens
+                        if text == "jose":
+                            pygame.mixer.Sound.play(pygame.mixer.Sound("voice/jose.mp3"))
+                        elif text == "manuel":
+                            pygame.mixer.Sound.play(pygame.mixer.Sound("voice/manuel.mp3"))
+                        else:
+                             elevenlabs_voice.play_join(player.name)
+                        waiting = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]  # Remove the last character
+                    else:
+                        text += event.unicode  # Append the typed character
+            
+
     # === MAIN GAME LOOP ===
+    
     calibrate_players()  # wait for player assignment before starting
     screen.fill(WHITE)    
 
+    # wait for space bar to start
+    
+    start_filenames = elevenlabs_voice.get_start_filenames()
+    start_filename = random.choice(start_filenames)
+    pygame.mixer.Sound.play(pygame.mixer.Sound(start_filename))
+    
+    font = pygame.font.Font(None, 72)
+    text = font.render("Press SPACE to start", True, BLACK)
+    text_rect = text.get_rect(center=(400, 300))
+    running2 = True
+    while running2:
+        screen.fill(WHITE)
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running2 = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    running2 = False
+    
+    #3 2 1 go countdown
+    for i in range(3, 0, -1):
+        screen.fill(WHITE)
+        text = FONT.render(str(i), True, BLACK)
+        text_rect = text.get_rect(center=(400, 300))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+        #sound 
+        count_filename = elevenlabs_voice.get_count_filename(i)
+        pygame.mixer.Sound.play(pygame.mixer.Sound(count_filename))
+        
+        pygame.time.wait(1000)
+    
+    begin_filename = "voice/begin.mp3"
+    pygame.mixer.Sound.play(pygame.mixer.Sound(begin_filename))
+
     running = True
+    #pygame.mixer.music.load("voice/music.mp3") #optional music
+    #pygame.mixer.music.play(-1)
     while running:
+
+    
         frame = get_video()
         thresh = process_ir_image(frame)
         detected_lights = detect_ir_lights(thresh)
@@ -301,6 +406,7 @@ def run():
 
 if __name__ == '__main__':
     pygame.init()
+    pygame.mixer.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
     while True:
         run()

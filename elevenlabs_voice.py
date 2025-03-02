@@ -4,6 +4,7 @@ from elevenlabs import play
 import os
 import random
 import json
+import threading
 
 load_dotenv()
 
@@ -21,6 +22,10 @@ def play_audio(text: str):
     audio = generate_audio(text)
     play(audio)
     
+def play_audio_async(text: str):
+    audio = generate_audio(text)
+    threading.Thread(target=play, args=(audio,)).start()
+    
 def save_audio(text: str, filename: str):
     audio = generate_audio(text)
     with open(filename, "wb") as f:
@@ -34,11 +39,13 @@ def play_join(name: str):
     with open("voice.json", "r") as f:
         join_lines = json.load(f)
         join_lines = join_lines["join"]
+    named_lines = []
     for line in join_lines:
         #replace placeholder {x}
-        line = line.replace("{x}", name)
+        named_lines.append(line.replace("{x}", name))
         print(line)
-    line = random.choice(join_lines)
+    
+    line = random.choice(named_lines)
     play_audio(line)    
 
 def play_win(name: str):
@@ -46,24 +53,27 @@ def play_win(name: str):
     with open("voice.json", "r") as f:
         win_lines = json.load(f)
         win_lines = win_lines["win"]
+    named_lines = []
     for line in win_lines:
         #replace placeholder {x}
-        line = line.replace("{x}", name)
+        named_lines.append(line.replace("{x}", name))
         print(line)
-    line = random.choice(win_lines)
-    play_audio(line)
     
-def play_lose(name: str):
-    lose_lines = []
+    line = random.choice(named_lines)
+    play_audio_async(line) #async to avoid blocking
+    
+def play_crash(name: str):
+    crash_lines = []
     with open("voice.json", "r") as f:
-        lose_lines = json.load(f)
-        lose_lines = lose_lines["crash"]
-    for line in lose_lines:
+        crash_lines = json.load(f)
+        crash_lines = crash_lines["crash"]
+    named_lines = []
+    for line in crash_lines:
         #replace placeholder {x}
-        line = line.replace("{x}", name)
+        named_lines.append(line.replace("{x}", name))
         print(line)
-    line = random.choice(lose_lines)
-    play_audio(line)
+    line = random.choice(named_lines)
+    play_audio_async(line) #async to avoid blocking
     
 def get_start_filenames():
     return ["voice/start1.mp3", "voice/start2.mp3"]
