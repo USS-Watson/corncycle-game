@@ -5,6 +5,7 @@ import cv2
 import elevenlabs_voice
 import random
 import threading
+import serial
 
 WIDTH, HEIGHT = 800, 600
 #QUAD = [(188, 84), (533, 80), (144, 326), (528, 344)]
@@ -209,8 +210,23 @@ def run():
         print("Calibration complete!")
 
     def kill_player(player):
-        player.alive = False
+        player.alive = False    
         pygame.mixer.Sound.play(pygame.mixer.Sound("voice/crash.mp3"))
+        
+        #serial
+        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=5)
+        
+        #color
+        color = ""
+        if player.color == RED:
+            color = "R"
+        elif player.color == GREEN:
+            color = "G"
+        elif player.color == BLUE:
+            color = "B"
+        
+        ser.write(b'G,' + color.encode() + b',DEAD\n')
+        ser.close()    
         
         elevenlabs_voice.play_crash(player.name)
         print(f'Player {player.color} died!')
