@@ -7,8 +7,9 @@ import random
 import threading
 
 WIDTH, HEIGHT = 800, 600
-QUAD = [(181, 100), (535, 100), (127, 351), (519, 371)]
-NUM_PLAYERS = 2
+# QUAD = [(181, 100), (535, 100), (127, 351), (519, 371)]
+QUAD = [(188, 84), (533, 80), (144, 326), (528, 344)]
+NUM_PLAYERS = 3
 screen = None
 
 WHITE = (255, 255, 255)
@@ -109,7 +110,7 @@ def run():
                 light_positions.append((cx, cy))
         
         mapped_positions = normalize(light_positions)
-        # print(f'actual positions: {light_positions}, mapped positions: {mapped_positions}')
+        print(f'actual positions: {light_positions}, mapped positions: {mapped_positions}')
         return mapped_positions
 
     def normalize(light_positions):
@@ -229,7 +230,7 @@ def run():
         elevenlabs_voice.play_win(player.name)
 
         font = pygame.font.Font(None, 72)
-        text = font.render(f"{player.color_string} PLAYER WINS!", True, player.color)
+        text = font.render(f"{player.name.upper()} WINS!", True, player.color)
         text_rect = text.get_rect(center=(400, 200))
         running2 = True
         while running2:
@@ -243,6 +244,13 @@ def run():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_y:
                         running2 = False
+    
+    def nearest_color(color):
+        r, g, b = color
+        r = r if r > 100 else 0
+        g = g if g > 100 else 0
+        b = b if b > 100 else 0
+        return (r, g, b)
 
     def name_player(player):
         """Prompts the user to name the player."""
@@ -335,8 +343,8 @@ def run():
     pygame.mixer.Sound.play(pygame.mixer.Sound(begin_filename))
 
     running = True
-    #pygame.mixer.music.load("voice/music.mp3") #optional music
-    #pygame.mixer.music.play(-1)
+    pygame.mixer.music.load("voice/music.mp3") #optional music
+    pygame.mixer.music.play(-1)
     while running:
 
     
@@ -363,7 +371,9 @@ def run():
                         continue
                     position_color = (r, g, b)
                     print(f'loc: {player.position}, player color: {player.color_string}, position color: {position_color}')
-                    if position_color != WHITE and position_color != BLACK and position_color != player.color:
+                    if position_color != WHITE and position_color != BLACK and nearest_color(position_color) != player.color:
+                        kill_player(player)
+                    if player.position[0] <= 5 or player.position[0] >= WIDTH-5 or player.position[1] <= 5 or player.position[1] >= HEIGHT-5:
                         kill_player(player)
                     # if player.position in trails and trails[player.position] != player and trails[player.position].alive:
                 else:
@@ -392,9 +402,9 @@ def run():
             x, y = player.position
             # if the player is assigned, draw in the assigned color, else use green
             color = player.color if player.assigned else (0, 255, 0)
-            pygame.draw.circle(screen, color, (x, y), 10)
-            text = FONT.render(f'({x}, {y})', True, color)
-            screen.blit(text, (x, y))
+            # pygame.draw.circle(screen, color, (x, y), 10)
+            # text = FONT.render(f'({x}, {y})', True, color)
+            # screen.blit(text, (x, y))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
