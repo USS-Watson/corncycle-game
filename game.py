@@ -17,21 +17,41 @@ font = pygame.font.Font(None, 36)
 
 NUM_PLAYERS = 2
 players = []
-colors = [(255, 0, 0), (0, 0, 255), (0, 255, 0), (255, 255, 0)]  # Red, Blue, Green, Yellow
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+colors = [RED, BLUE, GREEN, YELLOW]
+trails = {}
 
 class Player:
     """Player class to represent a player with position, color, and trail."""
     def __init__(self, position, color):
         self.position = position
         self.color = color
+        if color == RED:
+            self.color_string = "RED"
+        elif color == GREEN:
+            self.color_string = "GREEN"
+        elif color == BLUE:
+            self.color_string = "BLUE"
+        elif color == YELLOW:
+            self.color_string = "YELLOW"
+        else:
+            self.color_string = "ANONYMOUS"
         self.assigned = False  # Initially not assigned
         self.trail = []  # List to store previous positions
         self.last_seen = 0  # Frames since last detection
+        self.alive = True
 
     def update_position(self, new_position):
         """Update the player's position and reset last_seen counter."""
+        # if len(self.trail) <= 0 or self.trail[-1] != self.position:
         self.trail.append(self.position)  # Store the old position
-        #if len(self.trail) > 10:  # Limit trail length to 10 points
+        trails[self.position] = self
+        # if len(self.trail) > 50:  # Limit trail length to 10 points
         #    self.trail.pop(0)  # Remove the oldest point in the trail
         self.position = new_position
         self.last_seen = 0  # Reset the missing frame counter
@@ -115,13 +135,13 @@ def funky_linear_algebra(src_pts, dst_pts):
     H = V[-1].reshape(3, 3)
     return H
 
-def ask_if_player(position):
+def ask_if_player(position, prompt):
     """Asks user if the detected light is a player and waits for input."""
     waiting = True
     while waiting:
         screen.fill((0, 0, 0))
 
-        text = font.render(f"Is this a player? (Y/N)", True, (255, 255, 255))
+        text = font.render(prompt, True, WHITE)
         screen.blit(text, (WIDTH // 4, HEIGHT - 50))
 
         pygame.draw.circle(screen, (0, 255, 0), position, 10)
@@ -166,7 +186,7 @@ def calibrate_players():
                 break  # Stop asking if we have enough players
 
             if not check_for_proximity(position):  # Only proceed if the point is not too close to an assigned player
-                if ask_if_player(position):
+                if ask_if_player(position, "Is this a player? (Y/N)"):
                     # Assign the color based on the length of the players list
                     player_color = colors[len(players)]
                     # Create a new player object with position and color
@@ -177,9 +197,37 @@ def calibrate_players():
 
     print("Calibration complete!")
 
+def kill_player(player):
+    player.alive = False
+    print(f'Player {player.color} died!')
+
+def end_game():
+    # assumes only one player is alive
+    player = None
+    for p in players:
+        if p.alive:
+            player = p
+            break
+    if player == None:
+        print('something terrible has happened')
+        return
+    
+    font = pygame.font.Font(None, 72)
+    text = font.render("THIS PLAYER WINS!", True, player.color)
+    text_rect = text.get_rect(center=(400, 300))
+    running = True
+    while running:
+        screen.fill(WHITE)
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
 # === MAIN GAME LOOP ===
 calibrate_players()  # Wait for player assignment before starting
+screen.fill(WHITE)    
 
 running = True
 while running:
@@ -187,30 +235,51 @@ while running:
     thresh = process_ir_image(frame)
     detected_lights = detect_ir_lights(thresh)
 
-    # Update player positions if a detected light matches a stored player
+    num_alive = 0
+
     for player in players:
+        if not player.alive:
+            continue
+        num_alive += 1
         if detected_lights:
             closest = min(detected_lights, key=lambda p: np.linalg.norm(np.array(p) - np.array(player.position)), default=None)
             if closest and np.linalg.norm(np.array(closest) - np.array(player.position)) < 50:  # Allow some tolerance
                 player.update_position(closest)
                 detected_lights.remove(closest)  # Remove from detection list to avoid duplicate assignment
+                r, g, b, a = None, None, None, None
+                try:
+                    r, g, b, a = screen.get_at(player.position)
+                except IndexError:
+                    print('skipping')
+                    continue
+                position_color = (r, g, b)
+                print(f'loc: {player.position}, player color: {player.color}, position color: {position_color}')
+                if position_color != WHITE and position_color != BLACK and position_color != player.color:
+                    kill_player(player)
+                # if player.position in trails and trails[player.position] != player and trails[player.position].alive:
             else:
                 player.mark_missing()  # Mark as missing if no close match found
         else:
             player.mark_missing()  # Mark as missing if no detections at all
+    
+    if num_alive <= 1:
+        end_game()
+        break
 
     # Convert processed IR frame for Pygame
     ir_display = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB)  # Convert grayscale to RGB
     ir_display = np.rot90(ir_display)  # Rotate if needed
     ir_display = pygame.surfarray.make_surface(ir_display)  # Convert to Pygame surface
 
-    screen.fill((255, 255, 255))    
+    screen.fill(WHITE)    
 
     # Draw trails (lines connecting previous positions) for each player
     for player in players:
+        if not player.alive:
+            continue
         # Draw the player's trail
-        for i in range(len(player.trail) - 1):
-            pygame.draw.line(screen, player.color, player.trail[i], player.trail[i + 1], 2)  # Small trail lines
+        for i in range(len(player.trail) - 10):
+            pygame.draw.line(screen, player.color, player.trail[i], player.trail[i + 1], 5)
 
         x, y = player.position
         # If the player is assigned, draw in the assigned color, else use green
