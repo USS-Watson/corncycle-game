@@ -1,2 +1,4 @@
 freenect.so
 __pycache__/
+.env
+.DS_Store

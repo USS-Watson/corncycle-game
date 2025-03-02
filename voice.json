@@ -1,0 +1,25 @@
+{
+    "join": [
+        "{x} has entered the Grid.",
+        "{x} is now online.",
+        "{x} has been uploaded to the system.",
+        "{x} has joined the lightcycle.",
+        "{x} has entered the digital battlefield."
+    ],
+    "crash": [
+        "{x} has derezzed.",
+        "{x} failed the challenge.",
+        "{x} has been eliminated.",
+        "{x} has crashed."
+    ],
+    "win": [
+        "{x} has conquered the Grid.",
+        "{x} has mastered the lightcycle challenge.",
+        "{x} survives. The system acknowledges your victory.",
+        "{x} has outmaneuvered all opponents and stands victorious.",
+        "{x} has defeated the challenge of speed and precision!",
+        "{x} has proven their mastery over the Grid.",
+        "{x} has bested the digital battlefield.",
+        "{x} emerges as the true lightcycle champion."
+    ]
+}
